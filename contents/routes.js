@@ -62,27 +62,6 @@ module.exports = [
         }
     },
     {
-        method: 'GET',
-        path: '/clients/{ip}/likes',
-        config: {
-            tags: ['api'],
-            async handler(request, h) {
-                const db = request.mongo.db;
-                try {
-                    const result = await db.collection('clients').findOne({ ipaddress: request.params.ip });
-                    return h.response({
-                            statusCode: 200,
-                            message: 'Get like counts with ip address.',
-                            data: result
-                        }).code(200);
-                } catch(err) {
-                    console.log(err);
-                    throw Boom.internal('Internal MongoDB error', err);
-                }
-            }
-        }
-    },
-    {
         method: 'POST',
         path: '/clients',
         config: {
@@ -93,16 +72,35 @@ module.exports = [
                         .required(),
                     url: Joi.string()
                         .required(),
+                    prod_name: Joi.string()
+                        .required(),
+                    price: Joi.number()
+                        .required(),
+                    icons: {
+                        hot_sale: {
+                            amount: Joi.number(),
+                            unit: Joi.string(),
+                            date: Joi.string(),
+                            time: Joi.string()
+                        },
+                        stock: {
+                            quantity: Joi.number()
+                        },
+                        limited: {
+                            quantity: Joi.number()
+                        }
+                    },
                     token: Joi.string()
                         .required(),
                     expire: Joi.number()
                         .required(),
+                    like_counts: Joi.number(),
                     switch: Joi.boolean()
-                        .required(),
-                    like_counts: Joi.number()
+                        .required()
                 }
             },
             async handler(request, h) {
+                console.log(request.payload);
                 const db = request.mongo.db;
                 try {
                     await db.collection('clients').insert(request.payload);
@@ -126,10 +124,11 @@ module.exports = [
             validate: {
                 payload: {
                     token: Joi.string(),
-                    expire: Joi.number()//.allow("unknow")
+                    expire: Joi.number()
                 }
             },
             async handler(request, h) {
+                console.log(request.payload);
                 const db = request.mongo.db;
                 try {
                     const result = await db.collection('clients').updateMany(
@@ -162,16 +161,34 @@ module.exports = [
                 payload: {
                     ipaddress: Joi.string(),
                     url: Joi.string(),
+                    prod_name: Joi.string(),
+                    price: Joi.number(),
+                    icons: {
+                        hot_sale: {
+                            amount: Joi.number(),
+                            unit: Joi.string(),
+                            date: Joi.string(),
+                            time: Joi.string()
+                        },
+                        stock: {
+                            quantity: Joi.number()
+                        },
+                        limited: {
+                            quantity: Joi.number()
+                        }
+                    },
                     token: Joi.string(),
                     expire: Joi.number(),
-                    switch: Joi.boolean(),
-                    like_counts: Joi.number()
+                    like_counts: Joi.number(),
+                    switch: Joi.boolean()
                 }
             },
             async handler(request, h) {
+                console.log(request.payload);
                 const db = request.mongo.db;
                 const ObjectID = request.mongo.ObjectID;
                 try {
+                    console.log(request.payload);
                     const result = await db.collection('clients').update(
                             {_id: new ObjectID(request.params.id)},
                             { $set: request.payload }
