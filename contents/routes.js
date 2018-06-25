@@ -21,11 +21,11 @@ module.exports = [
                 try {
                     const result = await db.collection('clients').find().toArray();
                     return h.response({
-                            statusCode: 200,
-                            message: 'Get all clients.',
-                            data: result
-                        }).code(200);
-                } catch(err) {
+                        statusCode: 200,
+                        message: 'Get all clients.',
+                        data: result
+                    }).code(200);
+                } catch (err) {
                     console.log(err);
                     throw Boom.internal('Internal MongoDB error', err);
                 }
@@ -50,11 +50,11 @@ module.exports = [
                 try {
                     const result = await db.collection('clients').findOne({ _id: new ObjectID(request.params.id) });
                     return h.response({
-                            statusCode: 200,
-                            message: 'Get one client.',
-                            data: result
-                        }).code(200);
-                } catch(err) {
+                        statusCode: 200,
+                        message: 'Get one client.',
+                        data: result
+                    }).code(200);
+                } catch (err) {
                     console.log(err);
                     throw Boom.internal('Internal MongoDB error', err);
                 }
@@ -77,7 +77,7 @@ module.exports = [
                     price: Joi.number()
                         .required(),
                     icons: {
-                        hot_sale: {
+                        promotion: {
                             amount: Joi.number(),
                             unit: Joi.string(),
                             date: Joi.string(),
@@ -88,7 +88,8 @@ module.exports = [
                         },
                         limited: {
                             quantity: Joi.number()
-                        }
+                        },
+                        hot_sale: Joi.boolean()
                     },
                     token: Joi.string()
                         .required(),
@@ -100,16 +101,16 @@ module.exports = [
                 }
             },
             async handler(request, h) {
-                console.log(request.payload);
+                // console.log(request.payload);
                 const db = request.mongo.db;
                 try {
                     await db.collection('clients').insert(request.payload);
                     return h.response({
-                            statusCode: 201,
-                            message: 'Create client susscess.',
-                            data: request.payload
-                        }).code(201);
-                } catch(err) {
+                        statusCode: 201,
+                        message: 'Create client susscess.',
+                        data: request.payload
+                    }).code(201);
+                } catch (err) {
                     console.log(err);
                     throw Boom.internal('Internal MongoDB error', err);
                 }
@@ -118,7 +119,7 @@ module.exports = [
     },
     {
         method: 'PUT',
-        path: '/clients',
+        path: '/token',
         config: {
             tags: ['api'],
             validate: {
@@ -128,19 +129,19 @@ module.exports = [
                 }
             },
             async handler(request, h) {
-                console.log(request.payload);
+                // console.log(request.payload);
                 const db = request.mongo.db;
                 try {
-                    const result = await db.collection('clients').updateMany(
-                            {},
-                            { $set: request.payload }
-                        );
+                    await db.collection('clients').updateMany(
+                        {},
+                        { $set: request.payload }
+                    );
                     return h.response({
-                            statusCode: 201,
-                            message: 'Update client susscess.',
-                            data: request.payload
-                        }).code(201);
-                } catch(err) {
+                        statusCode: 201,
+                        message: 'Update client susscess.',
+                        data: request.payload
+                    }).code(201);
+                } catch (err) {
                     console.log(err);
                     throw Boom.internal('Internal MongoDB error', err);
                 }
@@ -164,7 +165,7 @@ module.exports = [
                     prod_name: Joi.string(),
                     price: Joi.number(),
                     icons: {
-                        hot_sale: {
+                        promotion: {
                             amount: Joi.number(),
                             unit: Joi.string(),
                             date: Joi.string(),
@@ -175,7 +176,8 @@ module.exports = [
                         },
                         limited: {
                             quantity: Joi.number()
-                        }
+                        },
+                        hot_sale: Joi.boolean()
                     },
                     token: Joi.string(),
                     expire: Joi.number(),
@@ -184,21 +186,26 @@ module.exports = [
                 }
             },
             async handler(request, h) {
-                console.log(request.payload);
                 const db = request.mongo.db;
                 const ObjectID = request.mongo.ObjectID;
                 try {
-                    console.log(request.payload);
-                    const result = await db.collection('clients').update(
-                            {_id: new ObjectID(request.params.id)},
+                    // console.log(request.payload);
+                    (request.payload.ipaddress) ?
+                        await db.collection('clients').update(
+                            { _id: new ObjectID(request.params.id) },
+                            request.payload
+                        ) :
+                        await db.collection('clients').update(
+                            { _id: new ObjectID(request.params.id) },
                             { $set: request.payload }
                         );
+
                     return h.response({
-                            statusCode: 201,
-                            message: 'Update client susscess.',
-                            data: request.payload
-                        }).code(201);
-                } catch(err) {
+                        statusCode: 201,
+                        message: 'Update client susscess.',
+                        data: request.payload
+                    }).code(201);
+                } catch (err) {
                     console.log(err);
                     throw Boom.internal('Internal MongoDB error', err);
                 }
@@ -221,13 +228,13 @@ module.exports = [
                 const db = request.mongo.db;
                 const ObjectID = request.mongo.ObjectID;
                 try {
-                    const result = await db.collection('clients').deleteOne({_id: new ObjectID(request.params.id)});
+                    await db.collection('clients').deleteOne({ _id: new ObjectID(request.params.id) });
                     return h.response({
-                            statusCode: 204,
-                            message: 'Delete clients susscess.',
-                            data: request.params.id
-                        }).code(201);
-                } catch(err) {
+                        statusCode: 204,
+                        message: 'Delete clients susscess.',
+                        data: request.params.id
+                    }).code(201);
+                } catch (err) {
                     console.log(err);
                     throw Boom.internal('Internal MongoDB error', err);
                 }

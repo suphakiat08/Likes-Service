@@ -17,7 +17,7 @@
     "hapi-swagger": "^9.1.1",
     "inert": "^5.1.0",
     "joi": "^13.4.0",
-    "request": "^2.87.0",
+    "superagent": "^3.8.3",
     "vision": "^5.3.3"
   }
 }

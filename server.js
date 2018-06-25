@@ -4,7 +4,7 @@ const Pack = require('./package');
 const api = require('./contents/api');
 const route = require('./contents/routes');
 
-const startServer = async function() {
+const startServer = async function () {
     const server = Hapi.Server({
         host: 'localhost',
         port: 3000,
