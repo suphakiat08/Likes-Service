@@ -1,5 +1,6 @@
 const Boom = require('boom');
 const Joi = require('joi');
+const api = require('./api');
 
 module.exports = [
     {
@@ -68,9 +69,11 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    ipaddress: Joi.string()
+                    serial_number: Joi.string()
                         .required(),
                     url: Joi.string()
+                        .required(),
+                    post_id: Joi.string()
                         .required(),
                     prod_name: Joi.string()
                         .required(),
@@ -95,7 +98,6 @@ module.exports = [
                         .required(),
                     expire: Joi.number()
                         .required(),
-                    like_counts: Joi.number(),
                     switch: Joi.boolean()
                         .required()
                 }
@@ -105,6 +107,8 @@ module.exports = [
                 const db = request.mongo.db;
                 try {
                     await db.collection('clients').insert(request.payload);
+                    api.clearTime();
+                    api.apiCall();
                     return h.response({
                         statusCode: 201,
                         message: 'Create client susscess.',
@@ -160,9 +164,10 @@ module.exports = [
                         .description('ObjectID'),
                 },
                 payload: {
-                    ipaddress: Joi.string(),
+                    serial_number: Joi.string(),
                     url: Joi.string(),
                     prod_name: Joi.string(),
+                    post_id: Joi.string(),
                     price: Joi.number(),
                     icons: {
                         promotion: {
@@ -181,7 +186,6 @@ module.exports = [
                     },
                     token: Joi.string(),
                     expire: Joi.number(),
-                    like_counts: Joi.number(),
                     switch: Joi.boolean()
                 }
             },
@@ -189,8 +193,8 @@ module.exports = [
                 const db = request.mongo.db;
                 const ObjectID = request.mongo.ObjectID;
                 try {
-                    // console.log(request.payload);
-                    (request.payload.ipaddress) ?
+                    console.log(request.payload);
+                    (request.payload.prod_name) ?
                         await db.collection('clients').update(
                             { _id: new ObjectID(request.params.id) },
                             request.payload
@@ -200,6 +204,12 @@ module.exports = [
                             { $set: request.payload }
                         );
 
+                    if (request.payload.switch) {
+                        api.clearTime();
+                        api.apiCall();
+                    } else {
+                        api.switchOff(request.payload.serial_number);
+                    }
                     return h.response({
                         statusCode: 201,
                         message: 'Update client susscess.',

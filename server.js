@@ -1,8 +1,8 @@
 const Hapi = require('hapi');
 const fs = require('fs');
 const Pack = require('./package');
-const api = require('./contents/api');
 const route = require('./contents/routes');
+const api = require('./contents/api');
 
 const startServer = async function () {
     const server = Hapi.Server({
@@ -40,15 +40,16 @@ const startServer = async function () {
 
     await server.register([
         serverOpts,
+        swaggerOpts,
         require('inert'),
-        require('vision'),
-        swaggerOpts
+        require('vision')
     ]);
 
     server.route(route);
 
     await server.start();
     console.log(`Server started at ${server.info.uri}`);
+    api.apiCall();
 }
 
 startServer().catch((err) => {
