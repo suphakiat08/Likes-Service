@@ -1,8 +1,7 @@
 const Hapi = require('hapi');
 const fs = require('fs');
 const Pack = require('./package');
-const route = require('./contents/routes');
-const api = require('./contents/api');
+const api = require('./mqtt/api');
 
 const startServer = async function () {
     const server = Hapi.Server({
@@ -17,7 +16,12 @@ const startServer = async function () {
         }
     });
 
-    const serverOpts = {
+    const routesOpts = {
+        plugin: require('hapi-router'),
+        options: { routes: './routes/*.js' },
+    }
+
+    const mongoOpts = {
         plugin: require('hapi-mongodb'),
         options: {
             url: 'mongodb://summer1:summer1@ds215709.mlab.com:15709/it58160433_webservice_db1',
@@ -39,13 +43,21 @@ const startServer = async function () {
     }
 
     await server.register([
-        serverOpts,
+        routesOpts,
+        mongoOpts,
         swaggerOpts,
         require('inert'),
-        require('vision')
+        require('vision'),
+        require('hapi-auth-jwt2')
     ]);
 
-    server.route(route);
+    await server.auth.strategy('jwt', 'jwt', {
+        key: Buffer('%$^$&8fdh32%87', 'base64'),
+        validate: validate,
+        verifyOptions: { algorithms: ['HS256'] }
+    });
+
+    // server.auth.default('jwt');
 
     await server.start();
     console.log(`Server started at ${server.info.uri}`);
@@ -56,3 +68,11 @@ startServer().catch((err) => {
     console.error(err);
     process.exit(1);
 });
+
+const validate = async function (decoded, request) {
+    if (decoded) {
+        return { isValid: false };
+    } else {
+        return { isValid: true };
+    }
+};

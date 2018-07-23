@@ -1,29 +1,20 @@
 const Boom = require('boom');
 const Joi = require('joi');
-const api = require('./api');
+const api = require('../mqtt/api');
 
 module.exports = [
     {
         method: 'GET',
-        path: '/',
-        config: {
-            async handler(request, h) {
-                return h.response().redirect('/documentation').code(200);
-            }
-        }
-    },
-    {
-        method: 'GET',
-        path: '/clients',
+        path: '/monitor',
         config: {
             tags: ['api'],
             async handler(request, h) {
                 const db = request.mongo.db;
                 try {
-                    const result = await db.collection('clients').find().toArray();
+                    const result = await db.collection('monitor').find().toArray();
                     return h.response({
                         statusCode: 200,
-                        message: 'Get all clients.',
+                        message: 'Get all monitor.',
                         data: result
                     }).code(200);
                 } catch (err) {
@@ -35,7 +26,7 @@ module.exports = [
     },
     {
         method: 'GET',
-        path: '/clients/{id}',
+        path: '/monitor/{id}',
         config: {
             tags: ['api'],
             validate: {
@@ -49,7 +40,7 @@ module.exports = [
                 const db = request.mongo.db;
                 const ObjectID = request.mongo.ObjectID;
                 try {
-                    const result = await db.collection('clients').findOne({ _id: new ObjectID(request.params.id) });
+                    const result = await db.collection('monitor').findOne({ _id: new ObjectID(request.params.id) });
                     return h.response({
                         statusCode: 200,
                         message: 'Get one client.',
@@ -64,13 +55,17 @@ module.exports = [
     },
     {
         method: 'POST',
-        path: '/clients',
+        path: '/monitor',
         config: {
             tags: ['api'],
             validate: {
                 payload: {
-                    serial_number: Joi.string()
-                        .required(),
+                    device: {
+                        serial_number: Joi.string()
+                            .required(),
+                        detail: Joi.string()
+                            .required(),
+                    },
                     url: Joi.string()
                         .required(),
                     post_id: Joi.string()
@@ -83,15 +78,10 @@ module.exports = [
                         promotion: {
                             amount: Joi.number(),
                             unit: Joi.string(),
-                            date: Joi.string(),
-                            time: Joi.string()
+                            date: Joi.string()
                         },
-                        stock: {
-                            quantity: Joi.number()
-                        },
-                        limited: {
-                            quantity: Joi.number()
-                        },
+                        stock: Joi.boolean(),
+                        limited: Joi.boolean(),
                         hot_sale: Joi.boolean()
                     },
                     token: Joi.string()
@@ -99,6 +89,8 @@ module.exports = [
                     expire: Joi.number()
                         .required(),
                     switch: Joi.boolean()
+                        .required(),
+                    status: Joi.number()
                         .required()
                 }
             },
@@ -106,7 +98,7 @@ module.exports = [
                 // console.log(request.payload);
                 const db = request.mongo.db;
                 try {
-                    await db.collection('clients').insert(request.payload);
+                    await db.collection('monitor').insert(request.payload);
                     api.clearTime();
                     api.apiCall();
                     return h.response({
@@ -136,7 +128,7 @@ module.exports = [
                 // console.log(request.payload);
                 const db = request.mongo.db;
                 try {
-                    await db.collection('clients').updateMany(
+                    await db.collection('monitor').updateMany(
                         {},
                         { $set: request.payload }
                     );
@@ -154,7 +146,7 @@ module.exports = [
     },
     {
         method: 'PUT',
-        path: '/clients/{id}',
+        path: '/monitor/{id}',
         config: {
             tags: ['api'],
             validate: {
@@ -164,7 +156,10 @@ module.exports = [
                         .description('ObjectID'),
                 },
                 payload: {
-                    serial_number: Joi.string(),
+                    device: {
+                        serial_number: Joi.string(),
+                        detail: Joi.string()
+                    },
                     url: Joi.string(),
                     prod_name: Joi.string(),
                     post_id: Joi.string(),
@@ -173,20 +168,16 @@ module.exports = [
                         promotion: {
                             amount: Joi.number(),
                             unit: Joi.string(),
-                            date: Joi.string(),
-                            time: Joi.string()
+                            date: Joi.string()
                         },
-                        stock: {
-                            quantity: Joi.number()
-                        },
-                        limited: {
-                            quantity: Joi.number()
-                        },
+                        stock: Joi.boolean(),
+                        limited: Joi.boolean(),
                         hot_sale: Joi.boolean()
                     },
                     token: Joi.string(),
                     expire: Joi.number(),
-                    switch: Joi.boolean()
+                    switch: Joi.boolean(),
+                    status: Joi.number()
                 }
             },
             async handler(request, h) {
@@ -195,11 +186,11 @@ module.exports = [
                 try {
                     console.log(request.payload);
                     (request.payload.prod_name) ?
-                        await db.collection('clients').update(
+                        await db.collection('monitor').update(
                             { _id: new ObjectID(request.params.id) },
                             request.payload
                         ) :
-                        await db.collection('clients').update(
+                        await db.collection('monitor').update(
                             { _id: new ObjectID(request.params.id) },
                             { $set: request.payload }
                         );
@@ -207,9 +198,11 @@ module.exports = [
                     if (request.payload.switch) {
                         api.clearTime();
                         api.apiCall();
-                    } else {
-                        api.switchOff(request.payload.serial_number);
+                    } else if (request.payload.device && !request.payload.prod_name) {
+                        api.clearTime();
+                        api.switchOff(request.payload.device.serial_number);
                     }
+
                     return h.response({
                         statusCode: 201,
                         message: 'Update client susscess.',
@@ -224,7 +217,7 @@ module.exports = [
     },
     {
         method: 'DELETE',
-        path: '/clients/{id}',
+        path: '/monitor/{id}',
         config: {
             tags: ['api'],
             validate: {
@@ -238,10 +231,10 @@ module.exports = [
                 const db = request.mongo.db;
                 const ObjectID = request.mongo.ObjectID;
                 try {
-                    await db.collection('clients').deleteOne({ _id: new ObjectID(request.params.id) });
+                    await db.collection('monitor').deleteOne({ _id: new ObjectID(request.params.id) });
                     return h.response({
                         statusCode: 204,
-                        message: 'Delete clients susscess.',
+                        message: 'Delete monitor susscess.',
                         data: request.params.id
                     }).code(201);
                 } catch (err) {
@@ -250,5 +243,5 @@ module.exports = [
                 }
             }
         }
-    },
-]
+    }
+];
