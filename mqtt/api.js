@@ -97,7 +97,7 @@ function clearTime() {
 }
 
 mqtt.on("connect", function () {
-  mqtt.subscribe("/devices/admin");
+  mqtt.subscribe("/devices/heartbeat");
 });
 
 mqtt.on("message", function (topic, message) {
@@ -107,16 +107,13 @@ mqtt.on("message", function (topic, message) {
         let result = JSON.parse(res.text).data;
         for (let i = 0; i < result.length; i++) {
           if (result[i].device.serial_number == message.toString()) {
-            if (result[i].switch) {
-              let status = 1;
+            result[i].switch ?
               http.put("https://localhost:3000/monitor/" + result[i]._id)
-                .send({ status: status })
-                .end();
-            } else {
+                .send({ status: 1 })
+                .end() :
               http.put("https://localhost:3000/monitor/" + result[i]._id)
                 .send({ status: 0 })
                 .end();
-            }
           }
         }
       });
