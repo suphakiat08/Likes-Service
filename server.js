@@ -51,13 +51,17 @@ const startServer = async function () {
         require('hapi-auth-jwt2')
     ]);
 
+    // const JWT_SECRET = '#^$&*@%&^@*$=)_#($_*%$_(##@^$%&!*@#^@$&#@*$&!@*(%(#@%^!(@*$()*d@!87#@$*(&*!^@&)%($#_(%)e7';
+    const JWT_SECRET = 'I14kJipAJSZeQCokPSlfIygkXyolJF8oIyNAXiQlJiEqQCNeQCQmI0AqJCYhQCooJSgjQCVeIShAKiQoKSpkQCE4NyNAJCooJiohXkAmKSUoJCNfKCUpZTc=';
     await server.auth.strategy('jwt', 'jwt', {
-        key: Buffer('%$^$&8fdh32%87', 'base64'),
+        key: JWT_SECRET,
         validate: validate,
-        verifyOptions: { algorithms: ['HS256'] }
+        verifyOptions: {
+            algorithms: ['HS256']
+        }
     });
 
-    // server.auth.default('jwt');
+    server.auth.default('jwt');
 
     await server.start();
     console.log(`Server started at ${server.info.uri}`);
@@ -70,7 +74,7 @@ startServer().catch((err) => {
 });
 
 const validate = async function (decoded, request) {
-    if (decoded) {
+    if (!decoded) {
         return { isValid: false };
     } else {
         return { isValid: true };

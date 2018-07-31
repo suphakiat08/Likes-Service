@@ -22,7 +22,7 @@ async function apiCall() {
       console.log(e);
     }
   });
-  timeout = setTimeout(apiCall, 15000);
+  timeout = setTimeout(apiCall, 60000);
 }
 
 async function getSocial(data) {
@@ -41,9 +41,7 @@ async function getSocial(data) {
       });
 
     publisher(data);
-  } catch (e) {
-    console.log(e);
-  }
+  } catch (e) { }
 }
 
 function publisher(client) {
@@ -51,11 +49,15 @@ function publisher(client) {
   if (client.icons) {
     icons = '"icons": {';
     if (client.icons.promotion) {
-      icons += '"promotion": {'
-      icons += '"amount": ' + client.icons.promotion.amount + ', ';
-      icons += '"unit": "' + client.icons.promotion.unit + '", ';
-      icons += '"date": "' + client.icons.promotion.date + '"';
-      icons += '}, ';
+      const now = Date.now();
+      const end = new Date(client.icons.promotion.date).getTime();
+      if (now < end) {
+        icons += '"promotion": {'
+        icons += '"amount": ' + client.icons.promotion.amount + ', ';
+        icons += '"unit": "' + client.icons.promotion.unit + '", ';
+        icons += '"date": "' + client.icons.promotion.date + '"';
+        icons += '}, ';
+      }
     }
 
     if (client.icons.stock) {
@@ -80,6 +82,7 @@ function publisher(client) {
     + '"switch": ' + client.switch
     + "}";
 
+  console.log(data);
   console.log("/devices/" + client.device.serial_number);
   mqtt.publish("/devices/" + client.device.serial_number, data);
 
